@@ -1,45 +1,36 @@
 #include <ESP8266WiFi.h>
-#include <LiquidCrystal.h>  // include the library code:
+#include <LiquidCrystal.h> //library
 
-// initialize the library by associating any needed LCD interface pin
-// with the arduino pin number it is connected to
 const int rs = D5, en = D4, d4 = D3, d5 = D2, d6 = D1, d7 = D0;
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);    //lcd-interface
 
-const int aqsensor = A0;  //output of mq135 connected to A0 pin of ESP-8266
+const int aqsensor = A0; 
 
 int gled = D6;  //green led connected to pin 6
 int rled = D7;  //red led connected to pin 7
 int buz = D8;   //buzzer led connected to pin 8
 
 String apiKey = "CCJWPWHC3NEW3EOR";     //  Enter your Write API key here
-const char *ssid =  "Anonymous46";     // Enter your WiFi Name
-const char *pass =  "itsme@123"; // Enter your WiFi Password
+const char *ssid =  "your wifi name";     // Enter your WiFi Name
+const char *pass =  "your password"; // Enter your WiFi Password
 const char* server = "api.thingspeak.com";
 WiFiClient client;
 
 void setup() {
-  // put your setup code here, to run once:
   pinMode (gled,OUTPUT);     // gled is connected as output from ESP-8266
   pinMode (aqsensor,INPUT); // MQ135 is connected as INPUT to ESP-8266
   pinMode (rled,OUTPUT);
   pinMode (buz,OUTPUT);
   
-  Serial.begin (115200);      //begin serial communication with baud rate of 115200
+  Serial.begin (115200);      //begin serial communication with band rate of 115200
 
-  lcd.clear();              // clear lcd
+  lcd.clear();              
   lcd.begin (16,2);         // consider 16,2 lcd
 
   Serial.println("Connecting to ");
   lcd.print("Connecting.... ");
   Serial.println(ssid);
   WiFi.begin(ssid, pass);
-//  while (WiFi.status() != WL_CONNECTED)
-//  {
-//    delay(1000);
-//    Serial.print(".");
-//    lcd.print(".");
-//  }
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.print("IP Address: ");
@@ -49,43 +40,42 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
 
-    int ppm = analogRead(aqsensor); //read MQ135 analog outputs at A0 and store it in ppm
+  int ppm = analogRead(aqsensor); //read MQ135 analog outputs at A0 and store it in ppm
 
-  Serial.print("Air Quality: ");  //print message in serail monitor
-  Serial.println(ppm);            //print value of ppm in serial monitor
+  Serial.print("Air Quality: ");  
+  Serial.println(ppm);            
 
   lcd.setCursor(0,0);             // set cursor of lcd to 1st row and 1st column
-  lcd.print("Air Quality: ");      // print message on lcd
-  lcd.print(ppm);                 // print value of MQ135
+  lcd.print("Air Quality: ");      
+  lcd.print(ppm);                 
   delay(1000);
 
   if (client.connect(server,80))   
-                      {  
-                             String postStr = apiKey;
-                             postStr +="&field1=";
-                             postStr += String(ppm);
-                             postStr += "\r\n\r\n";
- 
-                             client.print("POST /update HTTP/1.1\n");
-                             client.print("Host: api.thingspeak.com\n");
-                             client.print("Connection: close\n");
-                             client.print("X-THINGSPEAKAPIKEY: "+apiKey+"\n");
-                             client.print("Content-Type: application/x-www-form-urlencoded\n");
-                             client.print("Content-Length: ");
-                             client.print(postStr.length());
-                             client.print("\n\n");
-                             client.print(postStr);
-                             Serial.print("Air Quality: ");
-                             Serial.print(ppm);
-                             Serial.println(" PPM.Send to Thingspeak.");
-                        }
+    {  
+       String postStr = apiKey;
+       postStr +="&field1=";
+       postStr += String(ppm);
+       postStr += "\r\n\r\n";
+
+       client.print("POST /update HTTP/1.1\n");
+       client.print("Host: api.thingspeak.com\n");
+       client.print("Connection: close\n");
+       client.print("X-THINGSPEAKAPIKEY: "+apiKey+"\n");
+       client.print("Content-Type: application/x-www-form-urlencoded\n");
+       client.print("Content-Length: ");
+       client.print(postStr.length());
+       client.print("\n\n");
+       client.print(postStr);
+       Serial.print("Air Quality: ");
+       Serial.print(ppm);
+       Serial.println(" PPM.Send to Thingspeak.");
+    }
   if(ppm <= 130)
   {
     digitalWrite(gled,LOW);   //jump here if ppm is not greater than threshold and turn off gled
     digitalWrite(rled,LOW);
-    digitalWrite(buz,LOW);   //Turn off Buzzer
+    digitalWrite(buz,LOW);   
     lcd.setCursor(1,1);
     lcd.print ("AQ Level Normal");
     Serial.println("AQ Level Normal");
@@ -94,23 +84,23 @@ void loop() {
   {
     digitalWrite(gled,HIGH);   //jump here if ppm is not greater than threshold and turn off gled
     digitalWrite(rled,LOW);
-    digitalWrite(buz,LOW);   //Turn off Buzzer
+    digitalWrite(buz,LOW);   
     lcd.setCursor(1,1);
     lcd.print ("AQ Level Medium");
     Serial.println("AQ Level Medium");
   }
   else
   {
-    lcd.setCursor(1,1);         //jump here if ppm is greater than threshold
+    lcd.setCursor(1,1);        
     lcd.print("AQ Level Danger!");
     Serial.println("AQ Level Danger!");     
     digitalWrite(gled,LOW);
     digitalWrite(rled,HIGH);
-    digitalWrite(buz,HIGH);     //Turn ON Buzzer
+    digitalWrite(buz,HIGH);     
   }
 
-          client.stop();
-          Serial.println("Waiting...");
-          delay(1000);
+    client.stop();
+    Serial.println("Waiting...");
+    delay(1000);
 
 }
